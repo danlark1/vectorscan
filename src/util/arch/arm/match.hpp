@@ -33,13 +33,13 @@ const u8 *first_non_zero_match<16>(const u8 *buf, SuperVector<16> mask, u16 cons
     uint32x4_t m = mask.u.u32x4[0];
     uint64_t vmax = vgetq_lane_u64 (vreinterpretq_u64_u32 (vpmaxq_u32(m, m)), 0);
     if (vmax != 0) {
-    typename SuperVector<16>::movemask_type z = mask.movemask();
-        DEBUG_PRINTF("z %08x\n", z);
-        DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-        u32 pos = ctz32(z & 0xffff);
+        typename SuperVector<16>::comparemask_type z = mask.comparemask();
+        DEBUG_PRINTF("z %08llx\n", z);
+        DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+        u32 pos = ctz64(z) / SuperVector<16>::mask_width();
         DEBUG_PRINTF("match @ pos %u\n", pos);
         assert(pos < 16);
-        DEBUG_PRINTF("buf + pos %p\n", buf + pos);
+        DEBUG_PRINTF("buf + pos %p\n", buf + (pos));
         return buf + pos;
     } else {
         return NULL; // no match
@@ -52,13 +52,12 @@ const u8 *last_non_zero_match<16>(const u8 *buf, SuperVector<16> mask, u16 const
     uint32x4_t m = mask.u.u32x4[0];
     uint64_t vmax = vgetq_lane_u64 (vreinterpretq_u64_u32 (vpmaxq_u32(m, m)), 0);
     if (vmax != 0) {
-    typename SuperVector<16>::movemask_type z = mask.movemask();
-        DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-        DEBUG_PRINTF("z %08x\n", z);
-        u32 pos = clz32(z & 0xffff);
+        typename SuperVector<16>::comparemask_type z = mask.comparemask();
+        DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+        DEBUG_PRINTF("z %08llx\n", z);
+        u32 pos = clz64(z) / SuperVector<16>::mask_width();
         DEBUG_PRINTF("match @ pos %u\n", pos);
-        assert(pos >= 16 && pos < 32);
-        return buf + (31 - pos);
+        return buf + (15 - pos);
     } else {
         return NULL; // no match
     }
@@ -70,10 +69,10 @@ const u8 *first_zero_match_inverted<16>(const u8 *buf, SuperVector<16> mask, u16
     uint32x4_t m = mask.u.u32x4[0];
     uint64_t vmax = vgetq_lane_u64 (vreinterpretq_u64_u32 (vpmaxq_u32(m, m)), 0);
     if (vmax != 0) {
-	typename SuperVector<16>::movemask_type z = mask.movemask();
-        DEBUG_PRINTF("z %08x\n", z);
-        DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-        u32 pos = ctz32(z & 0xffff);
+        typename SuperVector<16>::comparemask_type z = mask.comparemask();
+        DEBUG_PRINTF("z %08llx\n", z);
+        DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+        u32 pos = ctz64(z) / SuperVector<16>::mask_width();
         DEBUG_PRINTF("match @ pos %u\n", pos);
         assert(pos < 16);
         DEBUG_PRINTF("buf + pos %p\n", buf + pos);
@@ -89,13 +88,12 @@ const u8 *last_zero_match_inverted<16>(const u8 *buf, SuperVector<16> mask, u16 
     uint32x4_t m = mask.u.u32x4[0];
     uint64_t vmax = vgetq_lane_u64 (vreinterpretq_u64_u32 (vpmaxq_u32(m, m)), 0);
     if (vmax != 0) {
-	typename SuperVector<16>::movemask_type z = mask.movemask();
-        DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-        DEBUG_PRINTF("z %08x\n", z);
-        u32 pos = clz32(z & 0xffff);
+        typename SuperVector<16>::comparemask_type z = mask.comparemask();
+        DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+        DEBUG_PRINTF("z %08llx\n", z);
+        u32 pos = clz64(z) / SuperVector<16>::mask_width();
         DEBUG_PRINTF("match @ pos %u\n", pos);
-        assert(pos >= 16 && pos < 32);
-        return buf + (31 - pos);
+        return buf + (15 - pos);
     } else {
         return NULL; // no match
     }

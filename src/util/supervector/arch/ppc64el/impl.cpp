@@ -206,8 +206,8 @@ really_inline SuperVector<16> SuperVector<16>::eq(SuperVector<16> const &b) cons
 }
 
 template <>
-really_inline typename SuperVector<16>::movemask_type SuperVector<16>::movemask(void)const
-{ 
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::comparemask(void) const {
     uint8x16_t s1 = vec_sr((uint8x16_t)u.v128[0], vec_splat_u8(7));
     
     uint16x8_t ss = vec_sr((uint16x8_t)s1, vec_splat_u16(7));
@@ -230,11 +230,19 @@ really_inline typename SuperVector<16>::movemask_type SuperVector<16>::movemask(
 }
 
 template <>
-really_inline typename SuperVector<16>::movemask_type SuperVector<16>::eqmask(SuperVector<16> const b) const
-{
-    return eq(b).movemask();  
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::eqmask(SuperVector<16> const b) const {
+    return eq(b).comparemask();
 }
 
+template <> really_inline u32 SuperVector<16>::mask_width() { return 1; }
+
+template <>
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::iteration_mask(
+    typename SuperVector<16>::comparemask_type mask) {
+    return mask;
+}
 
 template <>
 template<uint8_t N>

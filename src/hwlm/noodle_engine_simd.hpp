@@ -36,7 +36,7 @@ static really_really_inline
 hwlm_error_t single_zscan(const struct noodTable *n,const u8 *d, const u8 *buf,
 		Z_TYPE z, size_t len, const struct cb_info *cbi) {
     while (unlikely(z)) {
-        Z_TYPE pos = JOIN(findAndClearLSB_, Z_BITS)(&z);
+        Z_TYPE pos = JOIN(findAndClearLSB_, Z_BITS)(&z) >> Z_POSSHIFT;
         size_t matchPos = d - buf + pos;
         DEBUG_PRINTF("match pos %zu\n", matchPos);
         hwlmcb_rv_t rv = final(n, buf, len, n->msk_len != 1, cbi, matchPos);
@@ -49,7 +49,7 @@ static really_really_inline
 hwlm_error_t double_zscan(const struct noodTable *n,const u8 *d, const u8 *buf,
 		Z_TYPE z, size_t len, const struct cb_info *cbi) {
     while (unlikely(z)) {
-        Z_TYPE pos = JOIN(findAndClearLSB_, Z_BITS)(&z);
+        Z_TYPE pos = JOIN(findAndClearLSB_, Z_BITS)(&z) >> Z_POSSHIFT;
         size_t matchPos = d - buf + pos - 1;
         DEBUG_PRINTF("match pos %zu\n", matchPos);
         hwlmcb_rv_t rv = final(n, buf, len, true, cbi, matchPos);
@@ -77,9 +77,11 @@ hwlm_error_t scanSingleShort(const struct noodTable *n, const u8 *buf,
     SuperVector<S> v = SuperVector<S>::Zeroes();
     memcpy(&v.u, d, l);
 
-    typename SuperVector<S>::movemask_type mask = SINGLE_LOAD_MASK(l);
+    typename SuperVector<S>::comparemask_type mask =
+        SINGLE_LOAD_MASK(l * SuperVector<S>::mask_width());
     v = v & caseMask;
-    typename SuperVector<S>::movemask_type z = mask & mask1.eqmask(v);
+    typename SuperVector<S>::comparemask_type z = mask & mask1.eqmask(v);
+    z = SuperVector<S>::iteration_mask(z);
 
     return single_zscan(n, d, buf, z, len, cbi);
 }
@@ -103,9 +105,12 @@ hwlm_error_t scanSingleUnaligned(const struct noodTable *n, const u8 *buf,
         return HWLM_SUCCESS;
     }
     size_t buf_off = start - offset;
-    typename SuperVector<S>::movemask_type mask = SINGLE_LOAD_MASK(l) << buf_off;
+    typename SuperVector<S>::comparemask_type mask =
+        SINGLE_LOAD_MASK(l * SuperVector<S>::mask_width())
+        << (buf_off * SuperVector<S>::mask_width());
     SuperVector<S> v = SuperVector<S>::loadu(d) & caseMask;
-    typename SuperVector<S>::movemask_type z = mask & mask1.eqmask(v);
+    typename SuperVector<S>::comparemask_type z = mask & mask1.eqmask(v);
+    z = SuperVector<S>::iteration_mask(z);
 
     return single_zscan(n, d, buf, z, len, cbi);
 }
@@ -126,10 +131,13 @@ hwlm_error_t scanDoubleShort(const struct noodTable *n, const u8 *buf,
     memcpy(&v.u, d, l);
     v = v & caseMask;
 
-    typename SuperVector<S>::movemask_type mask = DOUBLE_LOAD_MASK(l);
-    typename SuperVector<S>::movemask_type z1 = mask1.eqmask(v);
-    typename SuperVector<S>::movemask_type z2 = mask2.eqmask(v);
-    typename SuperVector<S>::movemask_type z = mask & (z1 << 1) & z2;
+    typename SuperVector<S>::comparemask_type mask =
+        DOUBLE_LOAD_MASK(l * SuperVector<S>::mask_width());
+    typename SuperVector<S>::comparemask_type z1 = mask1.eqmask(v);
+    typename SuperVector<S>::comparemask_type z2 = mask2.eqmask(v);
+    typename SuperVector<S>::comparemask_type z =
+        mask & (z1 << (SuperVector<S>::mask_width())) & z2;
+    z = SuperVector<S>::iteration_mask(z);
 
     return double_zscan(n, d, buf, z, len, cbi);
 }
@@ -148,10 +156,14 @@ hwlm_error_t scanDoubleUnaligned(const struct noodTable *n, const u8 *buf,
     }
     SuperVector<S> v = SuperVector<S>::loadu(d) & caseMask;
     size_t buf_off = start - offset;
-    typename SuperVector<S>::movemask_type mask = DOUBLE_LOAD_MASK(l) << buf_off;
-    typename SuperVector<S>::movemask_type z1 = mask1.eqmask(v);
-    typename SuperVector<S>::movemask_type z2 = mask2.eqmask(v);
-    typename SuperVector<S>::movemask_type z = mask & (z1 << 1) & z2;
+    typename SuperVector<S>::comparemask_type mask =
+        DOUBLE_LOAD_MASK(l * SuperVector<S>::mask_width())
+        << (buf_off * SuperVector<S>::mask_width());
+    typename SuperVector<S>::comparemask_type z1 = mask1.eqmask(v);
+    typename SuperVector<S>::comparemask_type z2 = mask2.eqmask(v);
+    typename SuperVector<S>::comparemask_type z =
+        mask & (z1 << SuperVector<S>::mask_width()) & z2;
+    z = SuperVector<S>::iteration_mask(z);
 
     return double_zscan(n, d, buf, z, len, cbi);
 }
@@ -191,7 +203,8 @@ hwlm_error_t scanSingleMain(const struct noodTable *n, const u8 *buf,
             __builtin_prefetch(base + 256);
 
             SuperVector<S> v = SuperVector<S>::load(d) & caseMask;
-            typename SuperVector<S>::movemask_type z = mask1.eqmask(v);
+            typename SuperVector<S>::comparemask_type z = mask1.eqmask(v);
+            z = SuperVector<S>::iteration_mask(z);
 
             hwlm_error_t rv = single_zscan(n, d, buf, z, len, cbi);
             RETURN_IF_TERMINATED(rv);
@@ -220,7 +233,7 @@ hwlm_error_t scanDoubleMain(const struct noodTable *n, const u8 *buf,
 
     size_t start = offset + n->msk_len - n->key_offset;
 
-    typename SuperVector<S>::movemask_type lastz1{0};
+    typename SuperVector<S>::comparemask_type lastz1{0};
 
     const u8 *d = buf + start;
     const u8 *e = buf + end;
@@ -248,10 +261,12 @@ hwlm_error_t scanDoubleMain(const struct noodTable *n, const u8 *buf,
             __builtin_prefetch(base + 256);
 
             SuperVector<S> v = SuperVector<S>::load(d) & caseMask;
-            typename SuperVector<S>::movemask_type z1 = mask1.eqmask(v);
-            typename SuperVector<S>::movemask_type z2 = mask2.eqmask(v);
-            typename SuperVector<S>::movemask_type z = (z1 << 1 | lastz1) & z2;
-            lastz1 = z1 >> Z_SHIFT;
+            typename SuperVector<S>::comparemask_type z1 = mask1.eqmask(v);
+            typename SuperVector<S>::comparemask_type z2 = mask2.eqmask(v);
+            typename SuperVector<S>::comparemask_type z =
+                (z1 << SuperVector<S>::mask_width() | lastz1) & z2;
+            lastz1 = z1 >> (Z_SHIFT * SuperVector<S>::mask_width());
+            z = SuperVector<S>::iteration_mask(z);
 
             hwlm_error_t rv = double_zscan(n, d, buf, z, len, cbi);
             RETURN_IF_TERMINATED(rv);

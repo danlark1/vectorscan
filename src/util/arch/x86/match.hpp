@@ -30,12 +30,13 @@
 template <>
 really_really_inline
 const u8 *first_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const UNUSED len) {
-    SuperVector<16>::movemask_type z = v.movemask();
-    DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-    DEBUG_PRINTF("z %08x\n", z);
+    assert(SuperVector<16>::mask_width() == 1);
+    SuperVector<16>::comparemask_type z = v.comparemask();
+    DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+    DEBUG_PRINTF("z %08llx\n", z);
     if (unlikely(z)) {
         u32 pos = ctz32(z);
-        DEBUG_PRINTF("~z %08x\n", ~z);
+        DEBUG_PRINTF("~z %08llx\n", ~z);
         DEBUG_PRINTF("match @ pos %u\n", pos);
         assert(pos < 16);
         return buf + pos;
@@ -47,8 +48,9 @@ const u8 *first_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const U
 template <>
 really_really_inline
 const u8 *first_non_zero_match<32>(const u8 *buf, SuperVector<32> v, u16 const UNUSED len) {
-    SuperVector<32>::movemask_type z = v.movemask();
-    DEBUG_PRINTF("z 0x%08x\n", z);
+    assert(SuperVector<32>::mask_width() == 1);
+    SuperVector<32>::comparemask_type z = v.comparemask();
+    DEBUG_PRINTF("z 0x%08llx\n", z);
     if (unlikely(z)) {
         u32 pos = ctz32(z);
         assert(pos < 32);
@@ -61,7 +63,8 @@ const u8 *first_non_zero_match<32>(const u8 *buf, SuperVector<32> v, u16 const U
 template <>
 really_really_inline
 const u8 *first_non_zero_match<64>(const u8 *buf, SuperVector<64>v, u16 const len) {
-    SuperVector<64>::movemask_type z = v.movemask();
+    assert(SuperVector<64>::mask_width() == 1);
+    SuperVector<64>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("z 0x%016llx\n", z);
     u64a mask = (~0ULL) >> (64 - len);
     DEBUG_PRINTF("mask %016llx\n", mask);
@@ -80,9 +83,10 @@ const u8 *first_non_zero_match<64>(const u8 *buf, SuperVector<64>v, u16 const le
 template <>
 really_really_inline
 const u8 *last_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const UNUSED len) {
-    SuperVector<16>::movemask_type z = v.movemask();
-    DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-    DEBUG_PRINTF("z %08x\n", z);
+    assert(SuperVector<16>::mask_width() == 1);
+    SuperVector<16>::comparemask_type z = v.comparemask();
+    DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+    DEBUG_PRINTF("z %08llx\n", z);
     if (unlikely(z)) {
         u32 pos = clz32(z);
         DEBUG_PRINTF("match @ pos %u\n", pos);
@@ -96,8 +100,9 @@ const u8 *last_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const UN
 template <>
 really_really_inline
 const u8 *last_non_zero_match<32>(const u8 *buf, SuperVector<32> v, u16 const UNUSED len) {
-    SuperVector<32>::movemask_type z = v.movemask();
-    DEBUG_PRINTF("z 0x%08x\n", z);
+    assert(SuperVector<32>::mask_width() == 1);
+    SuperVector<32>::comparemask_type z = v.comparemask();
+    DEBUG_PRINTF("z 0x%08llx\n", z);
     if (unlikely(z)) {
         u32 pos = clz32(z);
         assert(pos < 32);
@@ -110,7 +115,8 @@ const u8 *last_non_zero_match<32>(const u8 *buf, SuperVector<32> v, u16 const UN
 template <>
 really_really_inline
 const u8 *last_non_zero_match<64>(const u8 *buf, SuperVector<64>v, u16 const len) {
-    SuperVector<64>::movemask_type z = v.movemask();
+    assert(SuperVector<64>::mask_width() == 1);
+    SuperVector<64>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("z 0x%016llx\n", z);
     u64a mask = (~0ULL) >> (64 - len);
     DEBUG_PRINTF("mask %016llx\n", mask);
@@ -129,12 +135,13 @@ const u8 *last_non_zero_match<64>(const u8 *buf, SuperVector<64>v, u16 const len
 template <>
 really_really_inline
 const u8 *first_zero_match_inverted<16>(const u8 *buf, SuperVector<16> v, u16 const UNUSED len) {
-    SuperVector<16>::movemask_type z = v.movemask();
-    DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-    DEBUG_PRINTF("z %08x\n", z);
+    assert(SuperVector<16>::mask_width() == 1);
+    SuperVector<16>::comparemask_type z = v.comparemask();
+    DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+    DEBUG_PRINTF("z %08llx\n", z);
     if (unlikely(z != 0xffff)) {
         u32 pos = ctz32(~z & 0xffff);
-        DEBUG_PRINTF("~z %08x\n", ~z);
+        DEBUG_PRINTF("~z %08llx\n", ~z);
         DEBUG_PRINTF("match @ pos %u\n", pos);
         assert(pos < 16);
         return buf + pos;
@@ -146,10 +153,11 @@ const u8 *first_zero_match_inverted<16>(const u8 *buf, SuperVector<16> v, u16 co
 template <>
 really_really_inline
 const u8 *first_zero_match_inverted<32>(const u8 *buf, SuperVector<32> v, u16 const UNUSED len) {
-    SuperVector<32>::movemask_type z = v.movemask();
-    DEBUG_PRINTF("z 0x%08x\n", z);
+    assert(SuperVector<32>::mask_width() == 1);
+    SuperVector<32>::comparemask_type z = v.comparemask();
+    DEBUG_PRINTF("z 0x%08llx\n", z);
     if (unlikely(z != 0xffffffff)) {
-        u32 pos = ctz32(~z);
+        u32 pos = ctz32(~z & 0xffffffffu);
         assert(pos < 32);
         DEBUG_PRINTF("match @ pos %u\n", pos);
         return buf + pos;
@@ -160,7 +168,8 @@ const u8 *first_zero_match_inverted<32>(const u8 *buf, SuperVector<32> v, u16 co
 template <>
 really_really_inline
 const u8 *first_zero_match_inverted<64>(const u8 *buf, SuperVector<64>v, u16 const len) {
-    SuperVector<64>::movemask_type z = v.movemask();
+    assert(SuperVector<64>::mask_width() == 1);
+    SuperVector<64>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("z 0x%016llx\n", z);
     u64a mask = (~0ULL) >> (64 - len);
     DEBUG_PRINTF("mask %016llx\n", mask);
@@ -179,12 +188,13 @@ const u8 *first_zero_match_inverted<64>(const u8 *buf, SuperVector<64>v, u16 con
 template <>
 really_really_inline
 const u8 *last_zero_match_inverted<16>(const u8 *buf, SuperVector<16> v, uint16_t UNUSED len ) {
-    SuperVector<16>::movemask_type z = v.movemask();
-    DEBUG_PRINTF("buf %p z %08x \n", buf, z);
-    DEBUG_PRINTF("z %08x\n", z);
+    assert(SuperVector<16>::mask_width() == 1);
+    SuperVector<16>::comparemask_type z = v.comparemask();
+    DEBUG_PRINTF("buf %p z %08llx \n", buf, z);
+    DEBUG_PRINTF("z %08llx\n", z);
     if (unlikely(z != 0xffff)) {
-        u32 pos = clz32(~z & 0xffff);
-        DEBUG_PRINTF("~z %08x\n", ~z);
+        u32 pos = clz32(~z & 0xffffu);
+        DEBUG_PRINTF("~z %08llx\n", ~z);
         DEBUG_PRINTF("match @ pos %u\n", pos);
         assert(pos >= 16 && pos < 32);
         return buf + (31 - pos);
@@ -196,9 +206,10 @@ const u8 *last_zero_match_inverted<16>(const u8 *buf, SuperVector<16> v, uint16_
 template<>
 really_really_inline
 const u8 *last_zero_match_inverted<32>(const u8 *buf, SuperVector<32> v, uint16_t UNUSED len) {
-    SuperVector<32>::movemask_type z = v.movemask();
-    if (unlikely(z != 0xffffffff)) {
-        u32 pos = clz32(~z & 0xffffffff);
+    assert(SuperVector<32>::mask_width() == 1);
+    SuperVector<32>::comparemask_type z = v.comparemask();
+    if (unlikely(static_cast<u32>(z) != 0xffffffff)) {
+        u32 pos = clz32(~z & 0xffffffffu);
         DEBUG_PRINTF("buf=%p, pos=%u\n", buf, pos);
         assert(pos < 32);
         return buf + (31 - pos);
@@ -210,8 +221,9 @@ const u8 *last_zero_match_inverted<32>(const u8 *buf, SuperVector<32> v, uint16_
 template <>
 really_really_inline
 const u8 *last_zero_match_inverted<64>(const u8 *buf, SuperVector<64> v, uint16_t len) {
+    assert(SuperVector<64>::mask_width() == 1);
     v.print8("v");
-    SuperVector<64>::movemask_type z = v.movemask();
+    SuperVector<64>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("z 0x%016llx\n", z);
     u64a mask = (~0ULL) >> (64 - len);
     DEBUG_PRINTF("mask %016llx\n", mask);

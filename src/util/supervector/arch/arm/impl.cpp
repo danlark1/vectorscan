@@ -249,25 +249,25 @@ really_inline SuperVector<16> SuperVector<16>::eq(SuperVector<16> const &b) cons
 }
 
 template <>
-really_inline typename SuperVector<16>::movemask_type SuperVector<16>::movemask(void) const
-{
-    SuperVector powers = SuperVector::dup_u64(0x8040201008040201UL);
-
-    // Compute the mask from the input
-    uint8x16_t mask  = (uint8x16_t) vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(u.u8x16[0], powers.u.u8x16[0]))));
-    uint64x2_t mask1 = (uint64x2_t) vextq_u8(mask, vdupq_n_u8(0), 7);
-    mask = vorrq_u8(mask, (uint8x16_t) mask1);
-
-    // Get the resulting bytes
-    uint16_t output;
-    vst1q_lane_u16(&output, (uint16x8_t)mask, 0);
-    return static_cast<typename SuperVector<16>::movemask_type>(output);
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::comparemask(void) const {
+    return static_cast<typename SuperVector<16>::comparemask_type>(
+        vget_lane_u64((uint64x1_t)vshrn_n_u16(u.u16x8[0], 4), 0));
 }
 
 template <>
-really_inline typename SuperVector<16>::movemask_type SuperVector<16>::eqmask(SuperVector<16> const b) const
-{
-    return eq(b).movemask();
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::eqmask(SuperVector<16> const b) const {
+    return eq(b).comparemask();
+}
+
+template <> really_inline u32 SuperVector<16>::mask_width() { return 4; }
+
+template <>
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::iteration_mask(
+    typename SuperVector<16>::comparemask_type mask) {
+    return mask & 0x1111111111111111ull;
 }
 
 template <>

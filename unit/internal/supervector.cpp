@@ -176,9 +176,9 @@ TEST(SuperVectorUtilsTest,Movemask128c){
         }
     }
     auto SP = SuperVector<16>::loadu(vec);
-    u16 mask = SP.movemask();
-    for(int i=0; i<16; i++) {
-        if (mask & (1 << i)) {
+    u64a mask = SP.comparemask();
+    for (int i = 0; i < 16; i++) {
+        if (mask & (1ull << (i * SuperVector<16>::mask_width()))) {
             vec2[i] = 0xff;
         }
     }
@@ -195,15 +195,21 @@ TEST(SuperVectorUtilsTest,Eqmask128c){
     for (int i = 0; i<16; i++) { vec2[i]= rand() % 100 + 67;}
     auto SP = SuperVector<16>::loadu(vec);
     auto SP1 = SuperVector<16>::loadu(vec2);
-    int mask = SP.eqmask(SP);
-    ASSERT_EQ(mask,0xFFFF);
+    u64a mask = SP.eqmask(SP);
+    for (u32 i = 0; i < 16; ++i) {
+        ASSERT_TRUE(mask & (1ull << (i * SuperVector<16>::mask_width())));
+    }
     mask = SP.eqmask(SP1);
     ASSERT_EQ(mask,0);
     vec2[0] = vec[0];
     vec2[1] = vec[1];
     auto SP2 = SuperVector<16>::loadu(vec2);
     mask = SP.eqmask(SP2);
-    ASSERT_EQ(mask,3);
+    ASSERT_TRUE(mask & 1);
+    ASSERT_TRUE(mask & (1ull << SuperVector<16>::mask_width()));
+    for (u32 i = 2; i < 16; ++i) {
+        ASSERT_FALSE(mask & (1ull << (i * SuperVector<16>::mask_width())));
+    }
 }
 
 /*Define LSHIFT128 macro*/
@@ -507,9 +513,9 @@ TEST(SuperVectorUtilsTest,Movemask256c){
         }
     }
     auto SP = SuperVector<32>::loadu(vec);
-    u32 mask = SP.movemask();
+    u64a mask = SP.comparemask();
     for(int i=0; i<32; i++) {
-        if (mask & (1 << i)) {
+        if (mask & (1ull << (i * SuperVector<32>::mask_width()))) {
             vec2[i] = 0xff;
         }
     }
@@ -527,15 +533,21 @@ TEST(SuperVectorUtilsTest,Eqmask256c){
     for (int i = 0; i<32; i++) { vec2[i]= rand() % 100 + 67;}
     auto SP = SuperVector<32>::loadu(vec);
     auto SP1 = SuperVector<32>::loadu(vec2);
-    u32 mask = SP.eqmask(SP);
-    ASSERT_EQ(mask,0xFFFFFFFF);
+    u64a mask = SP.eqmask(SP);
+    for (u32 i = 0; i < 32; ++i) {
+        ASSERT_TRUE(mask & (1ull << (i * SuperVector<32>::mask_width())));
+    }
     mask = SP.eqmask(SP1);
     ASSERT_EQ(mask,0);
     vec2[0] = vec[0];
     vec2[1] = vec[1];
     auto SP2 = SuperVector<32>::loadu(vec2);
     mask = SP.eqmask(SP2);
-    ASSERT_EQ(mask,3);
+    ASSERT_TRUE(mask & 1);
+    ASSERT_TRUE(mask & (1ull << SuperVector<32>::mask_width()));
+    for (u32 i = 2; i < 32; ++i) {
+        ASSERT_FALSE(mask & (1ull << (i * SuperVector<32>::mask_width())));
+    }
 }
 
 TEST(SuperVectorUtilsTest,pshufb256c) {
@@ -871,6 +883,8 @@ TEST(SuperVectorUtilsTest,Eqmask512c){
     auto SP = SuperVector<64>::loadu(vec);
     auto SP1 = SuperVector<64>::loadu(vec2);
     u64a mask = SP.eqmask(SP);
+    // Mask width for 64 bit type cannot be more than 1.
+    ASSERT_EQ(SuperVector<64>::mask_width(), 1);
     ASSERT_EQ(mask,0xFFFFFFFFFFFFFFFF);
     mask = SP.eqmask(SP1);
     ASSERT_EQ(mask,0);

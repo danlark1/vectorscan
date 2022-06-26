@@ -30,7 +30,7 @@
 template <>
 really_really_inline
 const u8 *first_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const UNUSED len) {
-    SuperVector<16>::movemask_type z = v.movemask();
+    SuperVector<16>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("buf %p z %08x \n", buf, z);
     DEBUG_PRINTF("z %08x\n", z);
     if (unlikely(z)) {
@@ -47,7 +47,7 @@ const u8 *first_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const U
 template <>
 really_really_inline
 const u8 *last_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const UNUSED len) {
-    SuperVector<16>::movemask_type z = v.movemask();
+    SuperVector<16>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("buf %p z %08x \n", buf, z);
     DEBUG_PRINTF("z %08x\n", z);
     if (unlikely(z)) {
@@ -63,7 +63,7 @@ const u8 *last_non_zero_match<16>(const u8 *buf, SuperVector<16> v, u16 const UN
 template <>
 really_really_inline
 const u8 *first_zero_match_inverted<16>(const u8 *buf, SuperVector<16> v, u16 const UNUSED len) {
-    SuperVector<16>::movemask_type z = v.movemask();
+    SuperVector<16>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("buf %p z %08x \n", buf, z);
     DEBUG_PRINTF("z %08x\n", z);
     if (unlikely(z != 0xffff)) {
@@ -81,7 +81,7 @@ const u8 *first_zero_match_inverted<16>(const u8 *buf, SuperVector<16> v, u16 co
 template <>
 really_really_inline
 const u8 *last_zero_match_inverted<16>(const u8 *buf, SuperVector<16> v, uint16_t UNUSED len ) {
-    SuperVector<16>::movemask_type z = v.movemask();
+    SuperVector<16>::comparemask_type z = v.comparemask();
     DEBUG_PRINTF("buf %p z %08x \n", buf, z);
     DEBUG_PRINTF("z %08x\n", z);
     if (unlikely(z != 0xffff)) {

@@ -53,7 +53,15 @@ really_really_inline
 u32 packedExtract<16>(SuperVector<16> s, const SuperVector<16> permute, const SuperVector<16> compare) {
     SuperVector<16> shuffled = s.pshufb<true>(permute);
     SuperVector<16> compared = shuffled & compare;
-    u16 rv = ~compared.eqmask(shuffled);
+    u64a rv = (~compared.eqmask(shuffled)) & 0xffff;
+    if (SuperVector<16>::mask_width() != 1) {
+        u32 ans = 0;
+        for (u32 i = 0; i < 16; ++i) {
+            ans |= (rv & (1ull << (i * SuperVector<16>::mask_width()))) >>
+                   (i * SuperVector<16>::mask_width() - i);
+        }
+        return ans;
+    }
     return (u32)rv;
 }
 
@@ -62,7 +70,8 @@ really_really_inline
 u32 packedExtract<32>(SuperVector<32> s, const SuperVector<32> permute, const SuperVector<32> compare) {
     SuperVector<32> shuffled = s.pshufb<true>(permute);
     SuperVector<32> compared = shuffled & compare;
-    u32 rv = ~compared.eqmask(shuffled); 
+    // TODO(danlark1): Future ARM support might have a bug.
+    u64a rv = (~compared.eqmask(shuffled)) & 0xffffffff;
     return (u32)((rv >> 16) | (rv & 0xffffU));
 }
 
@@ -71,6 +80,7 @@ really_really_inline
 u32 packedExtract<64>(SuperVector<64> s, const SuperVector<64> permute, const SuperVector<64> compare) {
     SuperVector<64> shuffled = s.pshufb<true>(permute);
     SuperVector<64> compared = shuffled & compare;
+    // TODO(danlark1): Future ARM support might have a bug.
     u64a rv = ~compared.eqmask(shuffled);
     rv = rv >> 32 | rv;
     return (u32)(((rv >> 16) | rv) & 0xffffU);

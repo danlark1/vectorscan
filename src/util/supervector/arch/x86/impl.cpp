@@ -203,15 +203,24 @@ really_inline SuperVector<16> SuperVector<16>::eq(SuperVector<16> const &b) cons
 }
 
 template <>
-really_inline typename SuperVector<16>::movemask_type SuperVector<16>::movemask(void)const
-{
-    return _mm_movemask_epi8(u.v128[0]);
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::comparemask(void) const {
+    return (u32)_mm_movemask_epi8(u.v128[0]);
 }
 
 template <>
-really_inline typename SuperVector<16>::movemask_type SuperVector<16>::eqmask(SuperVector<16> const b) const
-{
-    return eq(b).movemask();
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::eqmask(SuperVector<16> const b) const {
+    return eq(b).comparemask();
+}
+
+template <> really_inline u32 SuperVector<16>::mask_width() { return 1; }
+
+template <>
+really_inline typename SuperVector<16>::comparemask_type
+SuperVector<16>::iteration_mask(
+    typename SuperVector<16>::comparemask_type mask) {
+    return mask;
 }
 
 // template <>
@@ -754,17 +763,25 @@ really_inline SuperVector<32> SuperVector<32>::eq(SuperVector<32> const &b) cons
 }
 
 template <>
-really_inline typename SuperVector<32>::movemask_type SuperVector<32>::movemask(void)const
-{
-    return _mm256_movemask_epi8(u.v256[0]);
+really_inline typename SuperVector<32>::comparemask_type
+SuperVector<32>::comparemask(void) const {
+    return (u32)_mm256_movemask_epi8(u.v256[0]);
 }
 
 template <>
-really_inline typename SuperVector<32>::movemask_type SuperVector<32>::eqmask(SuperVector<32> const b) const
-{
-    return eq(b).movemask();
+really_inline typename SuperVector<32>::comparemask_type
+SuperVector<32>::eqmask(SuperVector<32> const b) const {
+    return eq(b).comparemask();
 }
 
+template <> really_inline u32 SuperVector<32>::mask_width() { return 1; }
+
+template <>
+really_inline typename SuperVector<32>::comparemask_type
+SuperVector<32>::iteration_mask(
+    typename SuperVector<32>::comparemask_type mask) {
+    return mask;
+}
 
 // template <>
 // template<uint8_t N>
@@ -1347,42 +1364,48 @@ really_inline SuperVector<64> SuperVector<64>::opandnot(SuperVector<64> const &b
 template <>
 really_inline SuperVector<64> SuperVector<64>::operator==(SuperVector<64> const &b) const
 {
-    SuperVector<64>::movemask_type mask = _mm512_cmpeq_epi8_mask(u.v512[0], b.u.v512[0]);
+    SuperVector<64>::comparemask_type mask =
+        _mm512_cmpeq_epi8_mask(u.v512[0], b.u.v512[0]);
     return {_mm512_movm_epi8(mask)};
 }
 
 template <>
 really_inline SuperVector<64> SuperVector<64>::operator!=(SuperVector<64> const &b) const
 {
-    SuperVector<64>::movemask_type mask = _mm512_cmpneq_epi8_mask(u.v512[0], b.u.v512[0]);
+    SuperVector<64>::comparemask_type mask =
+        _mm512_cmpneq_epi8_mask(u.v512[0], b.u.v512[0]);
     return {_mm512_movm_epi8(mask)};
 }
 
 template <>
 really_inline SuperVector<64> SuperVector<64>::operator>(SuperVector<64> const &b) const
 {
-    SuperVector<64>::movemask_type mask = _mm512_cmpgt_epi8_mask(u.v512[0], b.u.v512[0]);
+    SuperVector<64>::comparemask_type mask =
+        _mm512_cmpgt_epi8_mask(u.v512[0], b.u.v512[0]);
     return {_mm512_movm_epi8(mask)};
 }
 
 template <>
 really_inline SuperVector<64> SuperVector<64>::operator<(SuperVector<64> const &b) const
 {
-    SuperVector<64>::movemask_type mask = _mm512_cmplt_epi8_mask(u.v512[0], b.u.v512[0]);
+    SuperVector<64>::comparemask_type mask =
+        _mm512_cmplt_epi8_mask(u.v512[0], b.u.v512[0]);
     return {_mm512_movm_epi8(mask)};
 }
 
 template <>
 really_inline SuperVector<64> SuperVector<64>::operator>=(SuperVector<64> const &b) const
 {
-    SuperVector<64>::movemask_type mask = _mm512_cmpge_epi8_mask(u.v512[0], b.u.v512[0]);
+    SuperVector<64>::comparemask_type mask =
+        _mm512_cmpge_epi8_mask(u.v512[0], b.u.v512[0]);
     return {_mm512_movm_epi8(mask)};
 }
 
 template <>
 really_inline SuperVector<64> SuperVector<64>::operator<=(SuperVector<64> const &b) const
 {
-    SuperVector<64>::movemask_type mask = _mm512_cmple_epi8_mask(u.v512[0], b.u.v512[0]);
+    SuperVector<64>::comparemask_type mask =
+        _mm512_cmple_epi8_mask(u.v512[0], b.u.v512[0]);
     return {_mm512_movm_epi8(mask)};
 }
 
@@ -1393,17 +1416,26 @@ really_inline SuperVector<64> SuperVector<64>::eq(SuperVector<64> const &b) cons
 }
 
 template <>
-really_inline typename SuperVector<64>::movemask_type SuperVector<64>::movemask(void)const
-{
+really_inline typename SuperVector<64>::comparemask_type
+SuperVector<64>::comparemask(void) const {
     __m512i msb = _mm512_set1_epi8(0xFF);
     __m512i mask = _mm512_and_si512(msb, u.v512[0]);
     return _mm512_cmpeq_epi8_mask(mask, msb);
 }
 
 template <>
-really_inline typename SuperVector<64>::movemask_type SuperVector<64>::eqmask(SuperVector<64> const b) const
-{
+really_inline typename SuperVector<64>::comparemask_type
+SuperVector<64>::eqmask(SuperVector<64> const b) const {
     return _mm512_cmpeq_epi8_mask(u.v512[0], b.u.v512[0]);
+}
+
+template <> really_inline u32 SuperVector<64>::mask_width() { return 1; }
+
+template <>
+really_inline typename SuperVector<64>::comparemask_type
+SuperVector<64>::iteration_mask(
+    typename SuperVector<64>::comparemask_type mask) {
+    return mask;
 }
 
 // template <>
