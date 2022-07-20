@@ -861,7 +861,7 @@ TEST(SuperVectorUtilsTest,Movemask512c){
     }
     auto SP = SuperVector<64>::loadu(vec);
     u8 vec2[64] = {0};
-    u64a mask = SP.movemask();
+    u64a mask = SP.comparemask();
     for(int i=0; i<64; i++) {
         if (mask & (1ULL << i)) {
             vec2[i] = 0xff;
